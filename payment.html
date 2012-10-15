@@ -1,0 +1,89 @@
+<HTML><HEAD>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<SCRIPT type="text/javascript" src="https://js.stripe.com/v1/"></SCRIPT>
+<SCRIPT >
+	Stripe.setPublishableKey('<Stripe Public Key Here>');
+
+	function formSubmit() {
+		if(validatePage() == true) {
+			$('.submit-button').attr("disabled", "disabled");
+			$("#processing").html("Processing credit card...");		
+			Stripe.createToken({
+				number: $('.card-number').val(),
+				cvc: $('.card-cvc').val(),
+				exp_month: $('.card-expiry-month').val(),
+				exp_year: $('.card-expiry-year').val(),
+				name: $("#name").val(),
+				address_line1: $("#address1").val(),
+				address_state: $("#city").val(),
+				address_zip: $("#zip").val(),
+			}, stripeResponseHandler);
+		}
+		return false;
+	}
+		
+	function stripeResponseHandler(status, response) {
+		if (response.error) {
+			// re-enable the submit button
+			$('.submit-button').removeAttr("disabled");
+			// show the errors on the form
+			$(".payment-errors").html(response.error.message);
+		} else {
+			$("#processing").html("Sending to payment page...");		
+			var form$ = $("#payment-form");
+			// token contains id, last4, and card type
+			var token = response['id'];
+			// insert the token into the form so it gets submitted to the server
+			form$.append("<input type='hidden' name='stripeToken' value='" + token + "' />");
+			// and submit
+			form$.get(0).submit();
+		}
+	}
+</SCRIPT></HEAD><BODY>
+<H1>Online Payment Form</H1><br/>
+
+<span class="payment-errors"></span>
+<form action="<page to submit to>" method="POST" id="payment-form" >
+	<div class="form-row">
+		<label>Full Name</label>
+		<input type="text" name="name" id="name" size="80" autocomplete="on" >
+	</div>
+	<div class="form-row">
+		<label>Street Address</label>
+		<input type="text" name="address1" id="address1" size="80" autocomplete="on" >
+	</div>
+	<div class="form-row">
+		<span>
+			<label>City</label>
+			<input type="text" name="city" id="city" size="40" autocomplete="on" >
+		</span>
+		<span>
+			<label>State</label>
+			<input type="text" name="state" id="state" size="2" autocomplete="on" >
+		</span>
+		<span>
+			<label>Zip</label>
+			<input type="text" name="zip" id="zip" size="10" autocomplete="on" >
+		</span>
+	</div>
+	<div class="form-row">
+		<label>Email Address</label>
+		<input type="text" name="email" id="email" size="40" autocomplete="on" >
+	</div>
+	<div class="form-row">
+		<label>Card Number</label>
+		<input type="text" size="20" autocomplete="off" class="card-number"/>
+	</div>
+	<div class="form-row">
+		<label>CVC</label>
+		<input type="text" size="4" autocomplete="off" class="card-cvc"/>
+	</div>
+	<div class="form-row">
+		<label>Expiration (MM/YYYY)</label>
+		<input type="text" size="2" class="card-expiry-month"/>
+	<span> / </span>
+		<input type="text" size="4" class="card-expiry-year"/>
+	</div>
+	<button type="button" class="submit-button" onclick="formSubmit()" >Submit Payment</button>
+	<span id="processing"></span>
+</form></BODY></HTML>
